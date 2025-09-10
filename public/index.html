@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Finance Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    section { margin-bottom: 2em; }
+    pre { background: #f4f4f4; padding: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Finance Dashboard</h1>
+  <section>
+    <h2>Balances</h2>
+    <pre id="balances">Loading...</pre>
+  </section>
+  <section>
+    <h2>Transactions</h2>
+    <pre id="transactions">Loading...</pre>
+  </section>
+  <script>
+    async function loadData() {
+      try {
+        const bRes = await fetch('/api/balances');
+        const balances = await bRes.json();
+        document.getElementById('balances').textContent = JSON.stringify(balances, null, 2);
+
+        const tRes = await fetch('/api/transactions');
+        const transactions = await tRes.json();
+        document.getElementById('transactions').textContent = JSON.stringify(transactions, null, 2);
+      } catch (err) {
+        document.getElementById('balances').textContent = 'Error loading data';
+        document.getElementById('transactions').textContent = 'Error loading data';
+      }
+    }
+    loadData();
+  </script>
+</body>
+</html>
