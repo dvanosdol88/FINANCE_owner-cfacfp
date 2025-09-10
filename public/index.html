@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Finance Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <h1>Balances</h1>
+  <ul id="balances"></ul>
+
+  <h1>Transactions</h1>
+  <ul id="transactions"></ul>
+
+  <script>
+    async function load() {
+      const balanceRes = await fetch('/api/balances');
+      const balances = await balanceRes.json();
+      const balancesList = document.getElementById('balances');
+      (balances.sample || balances).forEach(acc => {
+        const li = document.createElement('li');
+        li.textContent = `${acc.name}: $${acc.balance}`;
+        balancesList.appendChild(li);
+      });
+
+      const txnRes = await fetch('/api/transactions');
+      const txns = await txnRes.json();
+      const txnList = document.getElementById('transactions');
+      (txns.sample || txns).forEach(tx => {
+        const li = document.createElement('li');
+        li.textContent = `${tx.date} - ${tx.description} - $${tx.amount}`;
+        txnList.appendChild(li);
+      });
+    }
+    load();
+  </script>
+</body>
+</html>
