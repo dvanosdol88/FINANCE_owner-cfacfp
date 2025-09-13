@@ -23,7 +23,7 @@
       // Random hex nonce
       const nonce = crypto.getRandomValues(new Uint8Array(16)).reduce((s,b)=>s+('0'+b.toString(16)).slice(-2),'');
       const tc = TellerConnect.setup({
-        applicationId: "app_xxxxx",          // exact Application ID
+        applicationId: "app_pi947lercsih67ppss000",          // exact Application ID
         environment: "development",          // use production after Teller enables prod
         products: ["balance"],
         nonce,
