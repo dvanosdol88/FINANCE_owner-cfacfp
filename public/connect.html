@@ -1,34 +1,22 @@
-<!doctype html>
-<html>
-  <head><meta charset="utf-8"><title>Teller Connect</title></head>
-  <body>
-    <h1>Link an account</h1>
-    <button id="teller-connect">Connect to your bank</button>
-    <pre id="out"></pre>
+<script src="https://cdn.teller.io/connect/connect.js"></script>
+<script>
+const out = document.getElementById('out') || (()=>{const p=document.createElement('pre');p.id='out';document.body.appendChild(p);return p})();
+const log = (m,o)=>{ out.textContent += `\n${m} ${o?JSON.stringify(o,null,2):""}`; console.log(m,o||""); };
 
-    <script src="https://cdn.teller.io/connect/connect.js"></script>
-    <script>
-      // random hex nonce for signature verification later
-      const nonce = crypto.getRandomValues(new Uint8Array(16))
-        .reduce((s,b)=>s+('0'+b.toString(16)).slice(-2),'');
-      const out = document.getElementById('out');
-
-      const tc = TellerConnect.setup({
-        applicationId: "app_pi947lercsih67ppss000",        // <— your Application ID
-        environment: "development",
-        products: ["balance"],
-        nonce,
-        onSuccess: (enr) => {
-          out.textContent =
-            "ACCESS TOKEN:\\n" + enr.accessToken +
-            "\\n\\nSignatures:\\n" + JSON.stringify(enr.signatures || [], null, 2) +
-            "\\n\\nCopy the ACCESS TOKEN into Render as TELLER_ACCESS_TOKEN, save, redeploy.";
-          alert("Copy the ACCESS TOKEN from the page and paste it into Render env var TELLER_ACCESS_TOKEN, then redeploy.");
-        },
-        onExit: () => { out.textContent = "Closed."; }
-      });
-
-      document.getElementById('teller-connect').onclick = () => tc.open();
-    </script>
-  </body>
-</html>
+const nonce = crypto.getRandomValues(new Uint8Array(16)).reduce((s,b)=>s+('0'+b.toString(16)).slice(-2),'');
+const tc = TellerConnect.setup({
+  applicationId: "app_xxxxx",
+  environment: "development",
+  products: ["balance"],
+  nonce,
+  onInit: () => log("onInit"),
+  onEvent: (e) => log("onEvent", e),       // logs step transitions and errors
+  onFailure: (f) => log("onFailure", f),   // surfaces error details
+  onExit: () => log("onExit"),
+  onSuccess: (enr) => {
+    log("onSuccess", { enrollment: enr.enrollment?.id, user: enr.user?.id });
+    alert("Copy this token into Render -> TELLER_ACCESS_TOKEN:\n" + enr.accessToken);
+  }
+});
+document.getElementById('teller-connect').onclick = () => tc.open();
+</script>
