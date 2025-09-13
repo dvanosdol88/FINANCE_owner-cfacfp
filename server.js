@@ -34,12 +34,19 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+// Use SSL only when connecting to external Render hostnames (render.com)
+let sslOption = false;
+try {
+  const host = new URL(DATABASE_URL).host || "";
+  const isExternalRender = /\brender\.com$/i.test(host) || host.includes(".render.com");
+  sslOption = NODE_ENV === "production" && isExternalRender ? { rejectUnauthorized: false } : false;
+} catch (_) {
+  sslOption = false;
+}
+
 const pool = new pg.Pool({
   connectionString: DATABASE_URL,
-  ssl:
-    NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: sslOption,
 });
 
 // --- bootstrap schema ---
@@ -232,6 +239,4 @@ app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`listening on ${PORT}`));
