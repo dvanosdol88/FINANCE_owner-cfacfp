@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TD Balance Demo</title>
+  </head>
+  <body>
+    <h1>Quick TD Balance Check</h1>
+
+    <p>
+      <button id="connect-bank-btn">Connect Bank</button>
+      <span id="status">Not connected</span>
+    </p>
+
+    <p id="td-balance">Your TD Bank balance is: [ ]</p>
+
+    <script src="https://cdn.teller.io/connect/connect.js"></script>
+    <script>
+      const APPLICATION_ID = 'app_pi947lercsih67ppss000';
+      const ENVIRONMENT = 'development';
+
+      const $ = (id) => document.getElementById(id);
+      const fmtUSD = (n) => (Number(n)||0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+
+      function saveEnrollment(enr){ localStorage.setItem('teller:enrollment', JSON.stringify(enr)); }
+      function loadEnrollment(){ const raw = localStorage.getItem('teller:enrollment'); return raw ? JSON.parse(raw) : null; }
+
+      async function refreshFromServer(){
+        const enr = loadEnrollment();
+        if (!enr) return;
+        const status = $('status');
+        try {
+          status.textContent = 'Refreshing...';
+          await fetch('/api/refresh', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${enr.accessToken}` }
+          });
+          const r = await fetch('/dashboard/balances');
+          if (!r.ok) throw new Error(`balances_http_${r.status}`);
+          const rows = await r.json();
+
+          if (!Array.isArray(rows) || rows.length === 0) {
+            $('td-balance').textContent = 'Your TD Bank balance is: [no data]';
+            status.textContent = 'No balances returned';
+            return;
+          }
+
+          const td = rows.find(a => (a.account_name || '').toLowerCase().includes('td'))
+                  || rows.find(a => a.type === 'depository' && a.subtype === 'checking')
+                  || rows[0];
+
+          const amount = td ? (td.available ?? td.ledger ?? 0) : 0;
+          $('td-balance').textContent = `Your TD Bank balance is: ${fmtUSD(amount)}`;
+          status.textContent = 'Connected';
+        } catch (e) {
+          console.error(e);
+          $('td-balance').textContent = 'Your TD Bank balance is: [error]';
+          status.textContent = 'Refresh failed';
+        }
+      }
+
+      function setupConnect(){
+        const connect = TellerConnect.setup({
+          applicationId: app_pi947lercsih67ppss000,
+          environment: sandbox,
+          selectAccount: 'multiple',
+          onSuccess: (enr) => { saveEnrollment(enr); refreshFromServer(); }
+        });
+        $('connect-bank-btn').addEventListener('click', () => connect.open());
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        setupConnect();
+        if (loadEnrollment()) refreshFromServer();
+      });
+    </script>
+  </body>
+  </html>
+
