@@ -1,22 +1,43 @@
-<script src="https://cdn.teller.io/connect/connect.js"></script>
-<script>
-const out = document.getElementById('out') || (()=>{const p=document.createElement('pre');p.id='out';document.body.appendChild(p);return p})();
-const log = (m,o)=>{ out.textContent += `\n${m} ${o?JSON.stringify(o,null,2):""}`; console.log(m,o||""); };
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Teller Connect</title></head>
+  <body>
+    <h1>Link an account</h1>
+    <button id="teller-connect">Connect to your bank</button>
+    <pre id="log" style="white-space:pre-wrap;border:1px solid #ccc;padding:8px;margin-top:12px"></pre>
 
-const nonce = crypto.getRandomValues(new Uint8Array(16)).reduce((s,b)=>s+('0'+b.toString(16)).slice(-2),'');
-const tc = TellerConnect.setup({
-  applicationId: "app_xxxxx",
-  environment: "development",
-  products: ["balance"],
-  nonce,
-  onInit: () => log("onInit"),
-  onEvent: (e) => log("onEvent", e),       // logs step transitions and errors
-  onFailure: (f) => log("onFailure", f),   // surfaces error details
-  onExit: () => log("onExit"),
-  onSuccess: (enr) => {
-    log("onSuccess", { enrollment: enr.enrollment?.id, user: enr.user?.id });
-    alert("Copy this token into Render -> TELLER_ACCESS_TOKEN:\n" + enr.accessToken);
-  }
-});
-document.getElementById('teller-connect').onclick = () => tc.open();
-</script>
+    <!-- 1) Load Teller (no async/defer) -->
+    <script src="https://cdn.teller.io/connect/connect.js"></script>
+
+    <!-- 2) App code -->
+    <script>
+      const logEl = document.getElementById('log');
+      const log = (m, o) => { const s = m + (o ? ' ' + JSON.stringify(o,null,2) : ''); console.log(s); logEl.textContent += s + '\n'; };
+      window.onerror = (msg, src, line, col, err) => log('onerror', { msg, src, line, col, err: String(err) });
+
+      // Sanity checks
+      if (!window.TellerConnect) {
+        log('TellerConnect not loaded. Check network/extension blockers.');
+      }
+
+      // Random hex nonce
+      const nonce = crypto.getRandomValues(new Uint8Array(16)).reduce((s,b)=>s+('0'+b.toString(16)).slice(-2),'');
+      const tc = TellerConnect.setup({
+        applicationId: "app_xxxxx",          // exact Application ID
+        environment: "development",          // use production after Teller enables prod
+        products: ["balance"],
+        nonce,
+        onInit: () => log('onInit'),
+        onEvent: (e) => log('onEvent', e),
+        onFailure: (f) => log('onFailure', f),
+        onExit: () => log('onExit'),
+        onSuccess: (enr) => {
+          log('onSuccess', { user: enr.user?.id, enrollment: enr.enrollment?.id });
+          alert("Copy this ACCESS TOKEN to Render as TELLER_ACCESS_TOKEN:\n\n" + enr.accessToken);
+        }
+      });
+
+      document.getElementById('teller-connect').onclick = () => tc.open();
+    </script>
+  </body>
+</html>
