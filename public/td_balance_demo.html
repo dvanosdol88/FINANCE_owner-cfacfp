@@ -62,8 +62,8 @@
 
       function setupConnect(){
         const connect = TellerConnect.setup({
-          applicationId: APPLICATION_ID,
-          environment: ENVIRONMENT,
+          applicationId: app_pi947lercsih67ppss000,
+          environment: sandbox,
           selectAccount: 'multiple',
           onSuccess: (enr) => { saveEnrollment(enr); refreshFromServer(); }
         });
